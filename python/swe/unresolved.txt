@@ -1,25 +1,38 @@
-#! /bin/bash
-
-instances_unresolved=(
-# "django__django-10554"
-# "django__django-10914"
-# "django__django-10999"
-# "django__django-11087"
-# "django__django-11138"
-# "django__django-11149"
-# "django__django-11206"
-# "django__django-11211"
-# "django__django-11239"
-# "django__django-11265"
-# "django__django-11276"
-# "django__django-11299"
-# "django__django-11333"
-# "django__django-11400"
-# "django__django-11477"
-# "django__django-11532"
-# "django__django-11728"
-# "django__django-11734"
-# "django__django-11740"
+"astropy__astropy-12907"
+"astropy__astropy-13033"
+"astropy__astropy-13236"
+"astropy__astropy-13398"
+"astropy__astropy-13453"
+"astropy__astropy-13579"
+"astropy__astropy-13977"
+"astropy__astropy-14182"
+"astropy__astropy-14365"
+"astropy__astropy-14369"
+"astropy__astropy-14508"
+"astropy__astropy-14539"
+"astropy__astropy-14598"
+"astropy__astropy-7606"
+"astropy__astropy-8707"
+"astropy__astropy-8872"
+"django__django-10554"
+"django__django-10914"
+"django__django-10999"
+"django__django-11087"
+"django__django-11138"
+"django__django-11149"
+"django__django-11206"
+"django__django-11211"
+"django__django-11239"
+"django__django-11265"
+"django__django-11276"
+"django__django-11299"
+"django__django-11333"
+"django__django-11400"
+"django__django-11477"
+"django__django-11532"
+"django__django-11728"
+"django__django-11734"
+"django__django-11740"
 "django__django-11815"
 "django__django-11820"
 "django__django-11848"
@@ -119,6 +132,47 @@ instances_unresolved=(
 "django__django-16950"
 "django__django-17084"
 "django__django-17087"
+"matplotlib__matplotlib-14623"
+"matplotlib__matplotlib-20488"
+"matplotlib__matplotlib-20676"
+"matplotlib__matplotlib-20826"
+"matplotlib__matplotlib-20859"
+"matplotlib__matplotlib-21568"
+"matplotlib__matplotlib-22865"
+"matplotlib__matplotlib-23299"
+"matplotlib__matplotlib-23476"
+"matplotlib__matplotlib-24149"
+"matplotlib__matplotlib-24177"
+"matplotlib__matplotlib-24627"
+"matplotlib__matplotlib-24637"
+"matplotlib__matplotlib-24870"
+"matplotlib__matplotlib-24970"
+"matplotlib__matplotlib-25287"
+"matplotlib__matplotlib-25311"
+"matplotlib__matplotlib-25479"
+"matplotlib__matplotlib-25775"
+"matplotlib__matplotlib-25960"
+"matplotlib__matplotlib-26208"
+"matplotlib__matplotlib-26291"
+"matplotlib__matplotlib-26466"
+"mwaskom__seaborn-3069"
+"mwaskom__seaborn-3187"
+"psf__requests-1921"
+"psf__requests-2931"
+"psf__requests-6028"
+"pydata__xarray-2905"
+"pydata__xarray-3095"
+"pydata__xarray-3151"
+"pydata__xarray-3993"
+"pydata__xarray-4094"
+"pydata__xarray-4687"
+"pydata__xarray-4695"
+"pydata__xarray-6721"
+"pydata__xarray-6744"
+"pydata__xarray-6938"
+"pydata__xarray-6992"
+"pydata__xarray-7229"
+"pydata__xarray-7393"
 "pylint-dev__pylint-4551"
 "pylint-dev__pylint-4604"
 "pylint-dev__pylint-4661"
@@ -137,6 +191,17 @@ instances_unresolved=(
 "pytest-dev__pytest-7324"
 "pytest-dev__pytest-7490"
 "pytest-dev__pytest-7521"
+"scikit-learn__scikit-learn-10908"
+"scikit-learn__scikit-learn-12682"
+"scikit-learn__scikit-learn-13124"
+"scikit-learn__scikit-learn-13135"
+"scikit-learn__scikit-learn-14087"
+"scikit-learn__scikit-learn-14629"
+"scikit-learn__scikit-learn-14983"
+"scikit-learn__scikit-learn-25102"
+"scikit-learn__scikit-learn-25232"
+"scikit-learn__scikit-learn-25747"
+"scikit-learn__scikit-learn-26194"
 "sphinx-doc__sphinx-10323"
 "sphinx-doc__sphinx-10435"
 "sphinx-doc__sphinx-10449"
@@ -216,58 +281,3 @@ instances_unresolved=(
 "sympy__sympy-23262"
 "sympy__sympy-23413"
 "sympy__sympy-24562"
-)
-instances_resolved=(
-)
-
-instances_left=()
-
-# for dir in ../test_sphinx/*/; do
-#     dir=${dir%*/}  # remove trailing slash
-#     dir=${dir##*/}  # get only the directory name
-#     instances_left+=("$dir")
-# done
-
-# Create a new array with elements from instances_left that are not in instances_resolved
-instances=()
-for instance in "${instances_left[@]}"; do
-    if [[ ! " ${instances_resolved[*]} " =~ " ${instance} " ]]; then
-        instances+=("$instance")
-    fi
-done
-
-# instances=("${instances[@]:62}")
-# Combine with instances_unresolved
-# instances=("${instances_unresolved[@]}"  "${instances[@]:21}")
-instances=("${instances_unresolved[@]}")
-
-echo "Instances: ${instances[*]}"
-echo "Number of instances: ${#instances[@]}"
-# exit
-instances_string=$(IFS=,; echo "${instances[*]}")
-
-run_instance() {
-    local instance=$1
-    local run_id=$2
-    LANGCHAIN_PROJECT=unresolved_$instance python benchmark_copy.py --test-instance-ids $instance --run-id $run_id
-}
-
-# Set the number of instances to run in parallel
-k=1
-run_id="langgraph_agent_$(date +%s%N)"
-echo "Run ID: $run_id"
-# Run instances in parallel, k at a time
-for ((i=0; i<${#instances[@]}; i+=k)); do
-    # Get up to k instances
-    docker rmi $(docker images -f "dangling=true" -q)
-    batch=("${instances[@]:i:k}")
-    
-    # Run the batch in parallel
-    for instance in "${batch[@]}"; do
-        run_instance "$instance" "$run_id" &
-    done
-    
-    # Wait for all background processes to finish before starting the next batch
-    wait
-    docker rmi $(docker images -f "dangling=true" -q)
-done

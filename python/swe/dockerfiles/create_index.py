@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 from swebench import get_eval_refs
 
-from composio import Action, ComposioToolSet
+from composio import Action, ComposioToolSet, App
 from composio.utils.logging import WithLogger
 
 
@@ -76,10 +76,14 @@ class IndexGenerator(WithLogger):
                 ["git", "checkout", base_commit], cwd=outdir / outname, check=True
             )
 
-        composio_toolset = ComposioToolSet()
+        composio_toolset = ComposioToolSet(metadata={
+            App.CODE_ANALYSIS_TOOL:{
+                "dir_to_index_path" : str(outdir / outname),
+            }
+        })
         composio_toolset.execute_action(
             action=Action.CODE_ANALYSIS_TOOL_CREATE_CODE_MAP,
-            params={"dir_to_index_path": str(outdir / outname)},
+            params={},
         )
         with open(f"{Path.home()}/.composio/tmp/{outname}/fqdn_cache.json") as f:
             fqdn_index = json.load(f)
@@ -91,7 +95,7 @@ class IndexGenerator(WithLogger):
                         ] = f"/home/user/{repository.split('/')[-1]}/{k}"
                     fqdn_index[k] = v
 
-        docker_outdir = Path("generated") / outname / version
+        docker_outdir = Path("generated_lite") / outname / version
         # docker_outdir.mkdir(exist_ok=True, parents=True)
         with open(
             docker_outdir / "fqdn_cache.json",

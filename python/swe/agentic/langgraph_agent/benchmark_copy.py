@@ -218,10 +218,19 @@ def run_agent_function(workspace_id: str, issue_config: IssueConfig) -> str:
     if "sphinx" in issue_config.repo_name:
         for line in issue_config.install_repo_script.split("\n"):
             if "sed" in line:
-                composio_toolset.execute_action(
-                    action=Action.SHELLTOOL_EXEC_COMMAND,
-                    params={"cmd": line},
-                )
+                if "&&" not in line:
+                    composio_toolset.execute_action(
+                        action=Action.SHELLTOOL_EXEC_COMMAND,
+                        params={"cmd": line},
+                    )
+                else:
+                    cmds = line.split("&&")
+                    for cmd in cmds:
+                        for cmdor in cmd.split("||"):
+                            composio_toolset.execute_action(
+                                action=Action.SHELLTOOL_EXEC_COMMAND,
+                                params={"cmd": cmdor},
+                            )
         composio_toolset.execute_action(
             action=Action.SHELLTOOL_EXEC_COMMAND,
             params={"cmd": "git add -u && git config --global user.email \"example@example.com\" && git config --global user.name \"composio\" && git commit -m \"fix: setup complete\""},

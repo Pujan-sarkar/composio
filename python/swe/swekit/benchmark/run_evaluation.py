@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import traceback
 import typing as t
 from pathlib import Path
 
@@ -235,7 +236,7 @@ class EvaluationManager(WithLogger):
                         )
                         break  # If successful, exit the retry loop
                     except Exception as e:
-                        self.logger.error(f"Error setting up workspace (attempt {attempt + 1}/3): {e}")
+                        self.logger.error(f"Error setting up workspace (attempt {attempt + 1}/3): {traceback.format_exc()}")
                         if attempt < 2:  # If this wasn't the last attempt
                             self.logger.info(f"Retrying in 5 seconds...")
                             time.sleep(5)  # Wait for 5 seconds before retrying

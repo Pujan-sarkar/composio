@@ -6,8 +6,8 @@ from swebench.harness.utils import load_swebench_dataset
 import shutil
 from tqdm.auto import tqdm
 
-base_file = "/Users/shrey/Desktop/Composio-dev/composio/python/swe/temp/experiments/evaluation/verified/{method}/results/results.json"
-logs_file = "/Users/shrey/Desktop/Composio-dev/composio/python/swe/temp/langgraph_agent/logs/run_evaluation"
+base_file = "/Users/shrey/Desktop/Composio-dev/composio/python/swe/agentic/experiments/evaluation/verified/{method}/results/results.json"
+logs_file = "/Users/shrey/Desktop/Composio-dev/composio/python/swe/agentic/langgraph_agent/logs/run_evaluation"
 composio_coder = "/Users/shrey/.composio_coder/logs/"
 
 instances = load_swebench_dataset(name="princeton-nlp/SWE-bench_Verified")
@@ -82,11 +82,11 @@ def main(args):
     start_index = runs.index(start_run_id) if start_run_id in runs else 0
     end_index = runs.index(end_run_id) if end_run_id in runs else len(runs)
     relevant_runs = runs[start_index:end_index]
+    # print(relevant_runs[-1])
     resolved, unresolved, final_folders = get_resolved_unresolved(repo, relevant_runs)
     assert len(resolved.intersection(unresolved)) == 0
     for key, folder in final_folders.items():
-        if not os.path.exists(f"./temp/langgraph_agent/logs/run_evaluation/langgraph_agent_final/composio/{key}"):
-            shutil.copytree(folder, f"./temp/langgraph_agent/logs/run_evaluation/langgraph_agent_final/composio/{key}", dirs_exist_ok=True, ignore_dangling_symlinks=True)
+        shutil.copytree(folder, f"./agentic/langgraph_agent/logs/run_evaluation/langgraph_agent_final2/composio/{key}", dirs_exist_ok=True, ignore_dangling_symlinks=True)
     total = resolved.union(unresolved)
 
     print("Resolved by us: ", len(resolved))
@@ -101,9 +101,6 @@ def main(args):
     print(f"Total solved by {method}: {len(set(data['resolved']) & set(filtered_instances))}\n")
     print(f"Resolved by {method} but not by us:")
     temp = (set(data['resolved']) & set(total)).difference(resolved)
-    for t in sorted(temp):
-        print(f"\"{t}\"")
-    # print(get_predictions("sphinx-doc__sphinx-7440"))
 
 
 
