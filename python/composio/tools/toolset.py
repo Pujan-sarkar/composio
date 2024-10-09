@@ -50,7 +50,7 @@ from composio.tools.env.factory import HostWorkspaceConfig, WorkspaceFactory
 from composio.tools.local import load_local_tools
 from composio.tools.local.handler import LocalClient
 from composio.utils.enums import get_enum_key
-from composio.utils.logging import LogLevel, WithLogger
+from composio.utils.logging import LogIngester, LogLevel, WithLogger
 from composio.utils.url import get_api_url_base
 
 
@@ -108,6 +108,7 @@ class ComposioToolSet(WithLogger):
 
     _runtime: str = "composio"
     _description_char_limit: int = 1024
+    _log_ingester_client: t.Optional[LogIngester] = None
 
     def __init_subclass__(
         cls,
@@ -159,7 +160,7 @@ class ComposioToolSet(WithLogger):
             needs to be JSON serialisable dictionary. For example
 
             ```python
-            toolset = ComposioToolset(
+            toolset = ComposioToolSet(
                 ...,
                 metadata={
                     App.IMAGEANALYSER: {
@@ -196,7 +197,7 @@ class ComposioToolSet(WithLogger):
                     response["results"] = response["results"][:100]
                 return response
 
-            toolset = ComposioToolset(
+            toolset = ComposioToolSet(
                 ...,
                 processors={
                     "pre": {
@@ -313,6 +314,12 @@ class ComposioToolSet(WithLogger):
             return None
 
     @property
+    def _log_ingester(self) -> LogIngester:
+        if self._log_ingester_client is None:
+            self._log_ingester_client = LogIngester()
+        return self._log_ingester_client
+
+    @property
     def api_key(self) -> str:
         if self._api_key is None:
             raise ApiKeyNotProvidedError()
@@ -391,8 +398,19 @@ class ComposioToolSet(WithLogger):
             request_data=params,
             metadata=metadata or {},
         )
+
         if isinstance(response, BaseModel):
-            return response.model_dump()
+            response = response.model_dump()
+
+        self._log_ingester.log(
+            connection_id=None,
+            provider_name=action.app,
+            action_name=action.name,
+            request=params,
+            response=response,
+            is_error=not response.get("successful", False),
+        )
+
         return response
 
     def _execute_remote(
@@ -724,7 +742,7 @@ class ComposioToolSet(WithLogger):
         required_params = action_item.parameters.required or []
         for param_name, param_details in action_item.parameters.properties.items():
             if param_details.get("title") == "FileType" and all(
-                fprop in param_details.get("properties")
+                fprop in param_details.get("properties", {})
                 for fprop in ("name", "content")
             ):
                 action_item.parameters.properties[param_name].pop("properties")
